@@ -1,0 +1,49 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Android Debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repozitoriyni yuklab olish
+        uses: actions/checkout@v4
+
+      - name: Node.js 18 ni o'rnatish
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Java JDK 17 ni sozlash
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Kutubxonalarni o'rnatish
+        run: npm install
+
+      - name: Capacitor Android platformasini yaratish va sinxronlash
+        run: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+
+      - name: Gradle orqali APK faylini yig'ish
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: APK artefaktini saqlash
+        uses: actions/upload-artifact@v4
+        with:
+          name: AtomFizikasi-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
